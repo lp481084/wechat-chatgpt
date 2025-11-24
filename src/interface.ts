@@ -4,4 +4,6 @@ export interface IConfig {
   chatPrivateTiggerKeyword: string;
   chatTiggerRule: string;
   disableGroupMessage: boolean;
+  webServerPort: number;
+  webServerHost: string;
 }
