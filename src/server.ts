@@ -106,8 +106,55 @@ export class WebServer {
         }
     </style>
     <script>
-        // Auto refresh every 5 seconds
-        setTimeout(() => location.reload(), 5000);
+        // Auto refresh status every 5 seconds using fetch
+        async function updateStatus() {
+            try {
+                const response = await fetch('/status');
+                const data = await response.json();
+                
+                // Update login status
+                const statusSpan = document.getElementById('login-status');
+                if (data.isLoggedIn) {
+                    statusSpan.innerHTML = '✅ 已登录 (Logged In)';
+                    statusSpan.className = 'logged-in';
+                } else {
+                    statusSpan.innerHTML = '⏳ 等待登录 (Waiting for Login)';
+                    statusSpan.className = 'not-logged-in';
+                }
+                
+                // Update bot name
+                const botNameDiv = document.getElementById('bot-name');
+                if (data.isLoggedIn && data.botName) {
+                    botNameDiv.style.display = 'block';
+                    document.getElementById('bot-name-value').textContent = data.botName;
+                } else {
+                    botNameDiv.style.display = 'none';
+                }
+                
+                // Update QR code
+                const qrcodeDiv = document.getElementById('qrcode-section');
+                if (!data.isLoggedIn && data.qrcodeUrl) {
+                    qrcodeDiv.style.display = 'block';
+                    document.getElementById('qrcode-img').src = data.qrcodeUrl;
+                } else {
+                    qrcodeDiv.style.display = 'none';
+                }
+                
+                // Update uptime
+                const uptimeSpan = document.getElementById('uptime');
+                const uptime = Math.floor((Date.now() - new Date(data.startTime).getTime()) / 1000);
+                uptimeSpan.textContent = uptime + ' 秒 (seconds)';
+                
+            } catch (error) {
+                console.error('Failed to update status:', error);
+            }
+        }
+        
+        // Update status on page load
+        window.addEventListener('DOMContentLoaded', updateStatus);
+        
+        // Update status every 5 seconds
+        setInterval(updateStatus, 5000);
     </script>
 </head>
 <body>
@@ -117,46 +164,34 @@ export class WebServer {
         <div class="status">
             <div class="status-item">
                 <span class="status-label">状态 (Status):</span>
-                <span class="${this.botStatus.isLoggedIn ? "logged-in" : "not-logged-in"}">
+                <span id="login-status" class="${this.botStatus.isLoggedIn ? "logged-in" : "not-logged-in"}">
                     ${this.botStatus.isLoggedIn ? "✅ 已登录 (Logged In)" : "⏳ 等待登录 (Waiting for Login)"}
                 </span>
             </div>
-            ${
-              this.botStatus.isLoggedIn
-                ? `
-            <div class="status-item">
+            <div id="bot-name" class="status-item" style="display: ${this.botStatus.isLoggedIn ? "block" : "none"};">
                 <span class="status-label">机器人名称 (Bot Name):</span>
-                <span>${this.botStatus.botName}</span>
+                <span id="bot-name-value">${this.botStatus.botName}</span>
             </div>
-            `
-                : ""
-            }
             <div class="status-item">
                 <span class="status-label">启动时间 (Start Time):</span>
-                <span>${this.botStatus.startTime.toLocaleString("zh-CN", { timeZone: "Asia/Shanghai" })}</span>
+                <span>${this.botStatus.startTime.toLocaleString()}</span>
             </div>
             <div class="status-item">
                 <span class="status-label">运行时长 (Uptime):</span>
-                <span>${Math.floor(process.uptime())} 秒 (seconds)</span>
+                <span id="uptime">${Math.floor((Date.now() - this.botStatus.startTime.getTime()) / 1000)} 秒 (seconds)</span>
             </div>
         </div>
 
-        ${
-          !this.botStatus.isLoggedIn && this.botStatus.qrcodeUrl
-            ? `
-        <div class="qrcode">
+        <div id="qrcode-section" class="qrcode" style="display: ${!this.botStatus.isLoggedIn && this.botStatus.qrcodeUrl ? "block" : "none"};">
             <h2>扫描二维码登录 (Scan QR Code to Login)</h2>
-            <img src="${this.botStatus.qrcodeUrl}" alt="Login QR Code" />
+            <img id="qrcode-img" src="${this.botStatus.qrcodeUrl}" alt="Login QR Code" />
             <p>请使用微信扫描上方二维码登录<br/>Please scan the QR code above with WeChat</p>
         </div>
-        `
-            : ""
-        }
 
         <div class="info">
             <p><strong>💡 提示 (Tips):</strong></p>
             <ul>
-                <li>页面每5秒自动刷新 (Page auto-refreshes every 5 seconds)</li>
+                <li>页面每5秒自动刷新状态 (Status auto-updates every 5 seconds)</li>
                 <li>登录后即可开始使用微信机器人 (Bot will be ready after login)</li>
                 <li>访问 <code>/health</code> 查看健康状态 (Visit /health for health check)</li>
                 <li>访问 <code>/status</code> 获取JSON格式状态 (Visit /status for JSON status)</li>
@@ -181,23 +216,37 @@ export class WebServer {
 
   public start(): void {
     const { webServerPort, webServerHost } = config;
-    this.server = this.app.listen(webServerPort, webServerHost, () => {
-      console.log(
-        `🌐 Web server is running at http://${webServerHost}:${webServerPort}`
-      );
-      console.log(`   - Home page: http://${webServerHost}:${webServerPort}/`);
-      console.log(
-        `   - Health check: http://${webServerHost}:${webServerPort}/health`
-      );
-      console.log(
-        `   - Status API: http://${webServerHost}:${webServerPort}/status`
-      );
-      if (webServerHost === "0.0.0.0") {
+    try {
+      this.server = this.app.listen(webServerPort, webServerHost, () => {
         console.log(
-          `   - Access from network: http://<your-local-ip>:${webServerPort}/`
+          `🌐 Web server is running at http://${webServerHost}:${webServerPort}`
         );
-      }
-    });
+        console.log(`   - Home page: http://${webServerHost}:${webServerPort}/`);
+        console.log(
+          `   - Health check: http://${webServerHost}:${webServerPort}/health`
+        );
+        console.log(
+          `   - Status API: http://${webServerHost}:${webServerPort}/status`
+        );
+        if (webServerHost === "0.0.0.0") {
+          console.log(
+            `   - Access from network: http://<your-local-ip>:${webServerPort}/`
+          );
+        }
+      });
+
+      this.server.on("error", (error: NodeJS.ErrnoException) => {
+        if (error.code === "EADDRINUSE") {
+          console.error(
+            `❌ Port ${webServerPort} is already in use. Please change WEB_SERVER_PORT in .env file.`
+          );
+        } else {
+          console.error(`❌ Web server error: ${error.message}`);
+        }
+      });
+    } catch (error) {
+      console.error(`❌ Failed to start web server: ${error}`);
+    }
   }
 
   public stop(): void {
