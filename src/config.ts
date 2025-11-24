@@ -1,7 +1,6 @@
 import * as dotenv from "dotenv";
 dotenv.config();
 import { IConfig } from "./interface";
-dotenv.config();
 
 export const config: IConfig = {
   openai_api_key: process.env.OPENAI_API_KEY || "123456789",

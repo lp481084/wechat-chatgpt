@@ -140,10 +140,12 @@ export class WebServer {
                     qrcodeDiv.style.display = 'none';
                 }
                 
-                // Update uptime
-                const uptimeSpan = document.getElementById('uptime');
-                const uptime = Math.floor((Date.now() - new Date(data.startTime).getTime()) / 1000);
-                uptimeSpan.textContent = uptime + ' 秒 (seconds)';
+                // Update start time and uptime
+                const startTime = new Date(data.startTime);
+                document.getElementById('start-time').textContent = startTime.toLocaleString();
+                
+                const uptimeSeconds = Math.floor((Date.now() - startTime.getTime()) / 1000);
+                document.getElementById('uptime').textContent = uptimeSeconds + ' 秒 (seconds)';
                 
             } catch (error) {
                 console.error('Failed to update status:', error);
@@ -164,27 +166,25 @@ export class WebServer {
         <div class="status">
             <div class="status-item">
                 <span class="status-label">状态 (Status):</span>
-                <span id="login-status" class="${this.botStatus.isLoggedIn ? "logged-in" : "not-logged-in"}">
-                    ${this.botStatus.isLoggedIn ? "✅ 已登录 (Logged In)" : "⏳ 等待登录 (Waiting for Login)"}
-                </span>
+                <span id="login-status" class="not-logged-in">⏳ 加载中... (Loading...)</span>
             </div>
-            <div id="bot-name" class="status-item" style="display: ${this.botStatus.isLoggedIn ? "block" : "none"};">
+            <div id="bot-name" class="status-item" style="display: none;">
                 <span class="status-label">机器人名称 (Bot Name):</span>
-                <span id="bot-name-value">${this.botStatus.botName}</span>
+                <span id="bot-name-value"></span>
             </div>
             <div class="status-item">
                 <span class="status-label">启动时间 (Start Time):</span>
-                <span>${this.botStatus.startTime.toLocaleString()}</span>
+                <span id="start-time">加载中... (Loading...)</span>
             </div>
             <div class="status-item">
                 <span class="status-label">运行时长 (Uptime):</span>
-                <span id="uptime">${Math.floor((Date.now() - this.botStatus.startTime.getTime()) / 1000)} 秒 (seconds)</span>
+                <span id="uptime">加载中... (Loading...)</span>
             </div>
         </div>
 
-        <div id="qrcode-section" class="qrcode" style="display: ${!this.botStatus.isLoggedIn && this.botStatus.qrcodeUrl ? "block" : "none"};">
+        <div id="qrcode-section" class="qrcode" style="display: none;">
             <h2>扫描二维码登录 (Scan QR Code to Login)</h2>
-            <img id="qrcode-img" src="${this.botStatus.qrcodeUrl}" alt="Login QR Code" />
+            <img id="qrcode-img" src="" alt="Login QR Code" />
             <p>请使用微信扫描上方二维码登录<br/>Please scan the QR code above with WeChat</p>
         </div>
 
@@ -235,6 +235,7 @@ export class WebServer {
         }
       });
 
+      // Attach error handler to the server instance
       this.server.on("error", (error: NodeJS.ErrnoException) => {
         if (error.code === "EADDRINUSE") {
           console.error(
