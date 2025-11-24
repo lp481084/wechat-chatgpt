@@ -86,13 +86,15 @@
 docker pull holegots/wechat-chatgpt
 # run container
 docker run -d --name wechat-chatgpt \
+    -p 3000:3000 \
     -e OPENAI_API_KEY=<YOUR OPENAI API KEY> \
     -e MODEL="gpt-3.5-turbo" \
     -e CHAT_PRIVATE_TRIGGER_KEYWORD="" \
     -v $(pwd)/data:/app/data/wechat-assistant.memory-card.json \
     holegots/wechat-chatgpt:latest
-# View the QR code to log in to wechat
+# View the QR code to log in to wechat (via logs or web interface)
 docker logs -f wechat-chatgpt
+# Or visit http://localhost:3000 in your browser
 ```
 > How to get OPENAI API KEY? [Click here](https://platform.openai.com/account/api-keys)
 
@@ -108,6 +110,8 @@ docker-compose up -d
 # View the QR code to log in to wechat
 docker logs -f wechat-chatgpt
 ```
+
+**Note:** The web interface will be available at `http://localhost:3000` after starting the container. You can also scan the QR code directly in your browser.
 
 ## Use with nodejs
 
@@ -127,6 +131,35 @@ npm run dev
 ```
 
 > Please make sure your WeChat account can log in [WeChat on web](https://wx.qq.com/)
+
+## 🌐 Web Interface for Local Access
+
+The bot now includes a built-in web server that allows you to:
+- View bot status and login state
+- See the QR code in your browser for easier login
+- Monitor bot health and uptime
+- Access from any device on your local network
+
+### Configuration
+
+Set these environment variables in your `.env` file:
+
+```sh
+WEB_SERVER_PORT=3000        # Port for the web server (default: 3000)
+WEB_SERVER_HOST=0.0.0.0     # Host binding (0.0.0.0 allows network access)
+```
+
+### Access the Web Interface
+
+After starting the bot, open your browser and navigate to:
+- Local access: `http://localhost:3000`
+- Network access: `http://<your-local-ip>:3000` (e.g., `http://192.168.1.100:3000`)
+
+### Available Endpoints
+
+- `/` - Home page with QR code and status
+- `/health` - Health check endpoint (JSON)
+- `/status` - Bot status API (JSON)
 
 ## ✨ Contributor
 

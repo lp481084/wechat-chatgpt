@@ -83,13 +83,15 @@
 docker pull holegots/wechat-chatgpt:latest
 # 运行容器
 docker run -it --name wechat-chatgpt \
+    -p 3000:3000 \
     -e OPENAI_API_KEY=<YOUR OPENAI API KEY> \
     -e MODEL="gpt-3.5-turbo" \
     -e CHAT_PRIVATE_TRIGGER_KEYWORD="" \
     -v $(pwd)/data:/app/data/wechat-assistant.memory-card.json \
     holegots/wechat-chatgpt:latest
-# 使用二维码登陆
+# 使用二维码登陆（通过日志或Web界面）
 docker logs -f wechat-chatgpt
+# 或者在浏览器中访问 http://localhost:3000
 ```
 > 如何获取 OPENAI API KEY？请参考 [OpenAI API](https://platform.openai.com/account/api-keys)。
 
@@ -106,6 +108,8 @@ docker compose up -d
 docker logs -f wechat-chatgpt
 ```
 
+**提示：** 启动容器后，Web界面将在 `http://localhost:3000` 可用。您也可以直接在浏览器中扫描二维码。
+
 ## 使用NodeJS运行
 > 请确认安装的NodeJS版本为18.0.0以上
 ```sh
@@ -121,6 +125,41 @@ npm run dev
 # 如果您是初次登陆，那么需要扫描二维码
 ```
 > 请确保您的账号可以登陆 [网页版微信](https://wx.qq.com/)。
+
+
+## 🌐 Web界面 - 本地IP地址访问
+
+机器人现在包含了一个内置的Web服务器，您可以：
+- 在浏览器中查看机器人状态和登录状态
+- 在浏览器中查看二维码，更方便地登录
+- 监控机器人的健康状态和运行时间
+- 从局域网内的任何设备访问
+
+### 配置说明
+
+在 `.env` 文件中设置以下环境变量：
+
+```sh
+WEB_SERVER_PORT=3000        # Web服务器端口（默认：3000）
+WEB_SERVER_HOST=0.0.0.0     # 主机绑定地址（0.0.0.0 允许局域网访问）
+```
+
+### 访问Web界面
+
+启动机器人后，在浏览器中打开：
+- 本地访问：`http://localhost:3000`
+- 局域网访问：`http://<你的本地IP>:3000`（例如：`http://192.168.1.100:3000`）
+
+### 可用的接口
+
+- `/` - 主页，显示二维码和状态信息
+- `/health` - 健康检查接口（JSON格式）
+- `/status` - 机器人状态API（JSON格式）
+
+**如何获取本地IP地址？**
+- Windows: 在命令提示符中运行 `ipconfig`，查找 "IPv4 地址"
+- macOS/Linux: 在终端中运行 `ifconfig` 或 `ip addr`，查找您的网络接口IP
+- 示例：如果您的IP是 `192.168.1.100`，则访问 `http://192.168.1.100:3000`
 
 
 ## ✨ Contributor

@@ -3,6 +3,8 @@ services:
   wechat-chatgpt:
     image: wechat-chatgpt
     build: .
+    ports:
+      - "3000:3000"
     volumes:
       - ./data/wechat-assistant.memory-card.json:/app/wechat-assistant.memory-card.json
     env_file:
